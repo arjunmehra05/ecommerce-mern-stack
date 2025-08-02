@@ -1,4 +1,4 @@
-// frontend/src/config/api.js
+// src/config/api.js
 
 const getApiUrl = () => {
   if (process.env.NODE_ENV === 'production') {
@@ -10,7 +10,7 @@ const getApiUrl = () => {
 const API_URL = getApiUrl();
 
 if (process.env.NODE_ENV === 'development') {
-  console.log('API URL:', API_URL);
+  console.log('API base URL:', API_URL);
 }
 
 export default API_URL;

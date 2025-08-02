@@ -9,30 +9,29 @@ const connectDB = async () => {
       useUnifiedTopology: true,
       maxPoolSize: 10,
       serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 45000,
-      // Removed unsupported options like bufferMaxEntries!
+      socketTimeoutMS: 45000
+      // Note: removed deprecated 'bufferMaxEntries'
     });
 
     console.log(`MongoDB connected: ${mongoose.connection.host}`.cyan.bold);
-    
+
     mongoose.connection.on('connected', () => {
-      console.log('Mongoose connected to MongoDB'.green);
+      console.log('Mongoose connected to MongoDB Atlas'.green);
     });
-    
-    mongoose.connection.on('error', err => {
+
+    mongoose.connection.on('error', (err) => {
       console.error('Mongoose connection error:', err.message.red);
     });
-    
+
     mongoose.connection.on('disconnected', () => {
-      console.warn('Mongoose disconnected'.yellow);
+      console.log('Mongoose disconnected'.yellow);
     });
 
     process.on('SIGINT', async () => {
       await mongoose.connection.close();
-      console.log('MongoDB connection closed on app termination'.red);
+      console.log('MongoDB connection closed due to app termination'.red);
       process.exit(0);
     });
-
   } catch (err) {
     console.error('MongoDB connection failed:', err.message.red.bold);
     process.exit(1);
