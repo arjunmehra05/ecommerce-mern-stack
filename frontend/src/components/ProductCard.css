@@ -1,0 +1,14 @@
+/* src/components/ProductCard.css */
+.pcard{background:#fff;border:1px solid #ddd;border-radius:10px;overflow:hidden;transition:.3s;box-shadow:0 2px 8px rgb(0 0 0 /.05);}
+.pcard:hover{transform:translateY(-5px);box-shadow:0 8px 20px rgb(0 0 0 /.15);}
+.pcard-link{text-decoration:none;color:inherit;display:block;height:100%;}
+.pcard-imgwrap{height:200px;overflow:hidden;}
+.pcard-imgwrap img{width:100%;height:100%;object-fit:cover;transition:transform .3s;}
+.pcard:hover img{transform:scale(1.05);}
+.pcard-info{padding:15px;}
+.pcard-info h3{font-size:1.05rem;margin:0 0 8px;font-weight:600;color:#2c3e50;line-height:1.3;min-height:48px;}
+.price{color:#27ae60;font-weight:700;margin:0 0 10px;}
+.rating{display:flex;align-items:center;gap:4px;font-size:14px;color:#f39c12;}
+.star{color:#ddd;}
+.star.filled{color:#f39c12;}
+.count{font-size:12px;color:#666;margin-left:4px;}

@@ -1,0 +1,36 @@
+/* src/pages/ProductDetail.css */
+.pd-wrapper { padding: 30px 15px; background:#f8f9fa; }
+.pd-grid    { max-width:1200px;margin:auto;display:grid;grid-template-columns:1fr 1fr;gap:50px;background:white;border-radius:12px;padding:40px;box-shadow:0 4px 15px rgb(0 0 0 /.1); }
+@media(max-width:900px){ .pd-grid{grid-template-columns:1fr;gap:30px;padding:20px;} }
+
+.pd-images { display:flex;flex-direction:column;gap:15px; }
+.pd-main   { width:100%;border-radius:12px;border:2px solid #e1e8ed;object-fit:cover;aspect-ratio:1; }
+.pd-thumbs { display:flex;gap:10px;flex-wrap:wrap; }
+.pd-thumbs img { width:70px;height:70px;border-radius:8px;border:2px solid #e1e8ed;cursor:pointer;object-fit:cover; }
+.pd-thumbs img.active, .pd-thumbs img:hover { border-color:#3498db; }
+
+.pd-info h1{margin:0 0 10px;font-size:2rem;color:#2c3e50;}
+.pd-brand {color:#2980b9;margin:0 0 10px;}
+.pd-price {color:#27ae60;font-size:2rem;font-weight:700;margin:0 0 15px;}
+
+.pd-desc.short{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+.pd-desc{line-height:1.6;color:#555;margin:0 0 10px;}
+.pd-more{background:none;border:none;color:#3498db;cursor:pointer;padding:0;margin-bottom:15px;}
+
+.pd-qty {display:flex;align-items:center;gap:10px;margin:15px 0;}
+.pd-qty input{width:60px;text-align:center;font-weight:600;border:2px solid #e1e8ed;border-radius:6px;height:40px;}
+.pd-qty button{width:40px;height:40px;border:none;background:#f0f0f0;font-size:18px;cursor:pointer;border-radius:6px;}
+.pd-qty button:disabled{opacity:.5;cursor:not-allowed;}
+
+.pd-actions{display:flex;gap:15px;flex-wrap:wrap;}
+.pd-actions button{flex:1;padding:14px 20px;border:none;border-radius:8px;font-weight:600;cursor:pointer;transition:.25s;}
+.add{background:#3498db;color:#fff;}
+.add:hover:not(:disabled){background:#2980b9;transform:translateY(-2px);}
+.buy{background:#e74c3c;color:#fff;}
+.buy:hover{background:#c0392b;transform:translateY(-2px);}
+.oos{background:#95a5a6;color:#fff;cursor:not-allowed;}
+
+.pd-specs{max-width:1200px;margin:40px auto 0;background:white;padding:25px;border-radius:12px;box-shadow:0 4px 15px rgb(0 0 0 /.05);}
+.pd-specs h3{margin:0 0 15px;color:#2c3e50;}
+.pd-specs div{display:flex;justify-content:space-between;border-bottom:1px solid #eaeaea;padding:8px 0;}
+.pd-specs div:last-child{border:none;}
