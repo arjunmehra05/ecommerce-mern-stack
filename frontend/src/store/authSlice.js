@@ -1,18 +1,62 @@
-// src/store/authSlice.js
+// frontend/src/store/authSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
+import API_BASE_URL from '../config/api';
 
-const API_URL = 'http://localhost:5000/api/auth';
+const API_URL = `${API_BASE_URL}/api/auth`;
 
-// Async thunks for authentication
+// Configure axios defaults
+axios.defaults.timeout = 30000; // 30 seconds timeout
+
+// Create axios instance with base configuration
+const api = axios.create({
+  baseURL: API_URL,
+  timeout: 30000,
+  headers: {
+    'Content-Type': 'application/json',
+  }
+});
+
+// Request interceptor to add token
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers['x-auth-token'] = token;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor for error handling
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token expired or invalid
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+// Async thunks
 export const register = createAsyncThunk(
   'auth/register',
   async (userData, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${API_URL}/register`, userData);
+      const response = await api.post('/register', userData);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Registration failed');
+      return rejectWithValue(
+        error.response?.data?.message || 
+        error.message || 
+        'Registration failed'
+      );
     }
   }
 );
@@ -21,10 +65,14 @@ export const login = createAsyncThunk(
   'auth/login',
   async (credentials, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${API_URL}/login`, credentials);
+      const response = await api.post('/login', credentials);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Login failed');
+      return rejectWithValue(
+        error.response?.data?.message || 
+        error.message || 
+        'Login failed'
+      );
     }
   }
 );
@@ -33,13 +81,14 @@ export const getProfile = createAsyncThunk(
   'auth/getProfile',
   async (_, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_URL}/profile`, {
-        headers: { 'x-auth-token': token }
-      });
+      const response = await api.get('/profile');
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch profile');
+      return rejectWithValue(
+        error.response?.data?.message || 
+        error.message || 
+        'Failed to fetch profile'
+      );
     }
   }
 );
@@ -48,13 +97,14 @@ export const updateProfile = createAsyncThunk(
   'auth/updateProfile',
   async (userData, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.put(`${API_URL}/profile`, userData, {
-        headers: { 'x-auth-token': token }
-      });
+      const response = await api.put('/profile', userData);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Profile update failed');
+      return rejectWithValue(
+        error.response?.data?.message || 
+        error.message || 
+        'Profile update failed'
+      );
     }
   }
 );
@@ -63,29 +113,14 @@ export const changePassword = createAsyncThunk(
   'auth/changePassword',
   async (passwordData, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.put(`${API_URL}/change-password`, passwordData, {
-        headers: { 'x-auth-token': token }
-      });
+      const response = await api.put('/change-password', passwordData);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Password change failed');
-    }
-  }
-);
-
-export const deleteAccount = createAsyncThunk(
-  'auth/deleteAccount',
-  async (passwordData, { rejectWithValue }) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.delete(`${API_URL}/profile`, {
-        headers: { 'x-auth-token': token },
-        data: passwordData
-      });
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Account deletion failed');
+      return rejectWithValue(
+        error.response?.data?.message || 
+        error.message || 
+        'Password change failed'
+      );
     }
   }
 );
@@ -174,9 +209,11 @@ const authSlice = createSlice({
       .addCase(getProfile.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
-        state.token = null;
-        state.isAuthenticated = false;
-        localStorage.removeItem('token');
+        if (action.payload.includes('401') || action.payload.includes('token')) {
+          state.token = null;
+          state.isAuthenticated = false;
+          localStorage.removeItem('token');
+        }
       })
       // Update Profile
       .addCase(updateProfile.pending, (state) => {
@@ -201,27 +238,9 @@ const authSlice = createSlice({
       })
       .addCase(changePassword.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.message = action.payload.message;
+        state.message = action.payload.message || 'Password changed successfully';
       })
       .addCase(changePassword.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload;
-      })
-      // Delete Account
-      .addCase(deleteAccount.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-        state.message = null;
-      })
-      .addCase(deleteAccount.fulfilled, (state) => {
-        state.isLoading = false;
-        state.user = null;
-        state.token = null;
-        state.isAuthenticated = false;
-        localStorage.removeItem('token');
-        state.message = 'Account deleted successfully';
-      })
-      .addCase(deleteAccount.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       });

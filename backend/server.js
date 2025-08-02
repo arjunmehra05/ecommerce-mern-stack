@@ -15,11 +15,15 @@ const app = express();
 connectDB();
 
 /* ---------- MIDDLEWARE ---------- */
-// Enable CORS for all routes
+// CORS configuration for production
 const corsOptions = {
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: process.env.NODE_ENV === 'production' 
+    ? [process.env.CLIENT_URL, process.env.CLIENT_URL?.replace('https://', 'http://')]
+    : ['http://localhost:3000', 'http://127.0.0.1:3000'],
   credentials: true,
-  optionSuccessStatus: 200
+  optionSuccessStatus: 200,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token']
 };
 app.use(cors(corsOptions));
 
@@ -40,12 +44,24 @@ if (process.env.NODE_ENV === 'development') {
 
 /* ---------- ROUTES ---------- */
 // Health check route
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'MERN E-commerce API is running!',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
 app.get('/api/health', (req, res) => {
   res.status(200).json({
     success: true,
     message: 'Server is running and database is connected',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV
+    environment: process.env.NODE_ENV || 'development',
+    cors: {
+      allowedOrigins: corsOptions.origin
+    }
   });
 });
 
@@ -54,18 +70,20 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/products', require('./routes/products'));
 app.use('/api/admin', require('./routes/admin'));
 
-// Add cart routes if you have them
+// Add cart routes if available
 try {
   app.use('/api/cart', require('./routes/cart'));
+  console.log('✅ Cart routes loaded'.green);
 } catch (error) {
-  console.log('Cart routes not found - skipping'.yellow);
+  console.log('⚠️  Cart routes not found - skipping'.yellow);
 }
 
-// Add order routes if you have them
+// Add order routes if available
 try {
   app.use('/api/orders', require('./routes/orders'));
+  console.log('✅ Order routes loaded'.green);
 } catch (error) {
-  console.log('Order routes not found - skipping'.yellow);
+  console.log('⚠️  Order routes not found - skipping'.yellow);
 }
 
 /* ---------- ERROR HANDLING ---------- */
@@ -73,7 +91,13 @@ try {
 app.use('*', (req, res) => {
   res.status(404).json({
     success: false,
-    message: `Route ${req.originalUrl} not found`
+    message: `Route ${req.originalUrl} not found`,
+    availableRoutes: {
+      health: '/api/health',
+      auth: '/api/auth/*',
+      products: '/api/products/*',
+      admin: '/api/admin/*'
+    }
   });
 });
 
@@ -93,8 +117,8 @@ app.use((error, req, res, next) => {
 
   // Mongoose duplicate key error
   if (error.code === 11000) {
-    const field = Object.keys(error.keyValue)[0];
-    message = `${field} already exists`;
+    const field = Object.keys(error.keyValue || {})[0];
+    message = field ? `${field} already exists` : 'Duplicate entry';
     statusCode = 400;
   }
 
@@ -112,19 +136,22 @@ app.use((error, req, res, next) => {
   res.status(statusCode).json({
     success: false,
     message,
-    ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
+    ...(process.env.NODE_ENV === 'development' && { 
+      stack: error.stack,
+      error: error 
+    })
   });
 });
 
 /* ---------- SERVER STARTUP ---------- */
 const PORT = process.env.PORT || 5000;
 
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log('🚀 Server Status:'.cyan.bold);
   console.log(`   ✅ Server running on port ${PORT}`.green);
-  console.log(`   🌍 Environment: ${process.env.NODE_ENV}`.blue);
-  console.log(`   🔗 Local URL: http://localhost:${PORT}`.magenta);
-  console.log(`   📊 Health Check: http://localhost:${PORT}/api/health`.yellow);
+  console.log(`   🌍 Environment: ${process.env.NODE_ENV || 'development'}`.blue);
+  console.log(`   🔗 Health Check: http://localhost:${PORT}/api/health`.yellow);
+  console.log(`   🌐 CORS Origin: ${JSON.stringify(corsOptions.origin)}`.magenta);
   console.log('');
 });
 
@@ -141,6 +168,14 @@ process.on('uncaughtException', (err) => {
   console.log(`❌ Uncaught Exception: ${err.message}`.red.bold);
   server.close(() => {
     process.exit(1);
+  });
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('👋 SIGTERM received, shutting down gracefully');
+  server.close(() => {
+    console.log('💤 Process terminated');
   });
 });
 

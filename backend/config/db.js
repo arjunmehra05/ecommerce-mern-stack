@@ -8,6 +8,10 @@ const connectDB = async () => {
     const options = {
       useNewUrlParser: true,
       useUnifiedTopology: true,
+      maxPoolSize: 10, // Maintain up to 10 socket connections
+      serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
+      socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
+      bufferMaxEntries: 0 // Disable mongoose buffering
     };
 
     // Connect to MongoDB Atlas
@@ -29,11 +33,16 @@ const connectDB = async () => {
       console.log('🔌 Mongoose disconnected'.yellow);
     });
 
-    // Graceful shutdown
+    // Handle app termination
     process.on('SIGINT', async () => {
-      await mongoose.connection.close();
-      console.log('🛑 MongoDB connection closed through app termination'.red);
-      process.exit(0);
+      try {
+        await mongoose.connection.close();
+        console.log('🛑 MongoDB connection closed through app termination'.red);
+        process.exit(0);
+      } catch (error) {
+        console.error('Error closing MongoDB connection:', error);
+        process.exit(1);
+      }
     });
 
   } catch (error) {
@@ -44,6 +53,7 @@ const connectDB = async () => {
       console.error('Full error details:', error);
     }
     
+    // Exit process with failure
     process.exit(1);
   }
 };
