@@ -1,24 +1,16 @@
-// src/store/productsSlice.js
+// frontend/src/store/productsSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
-import API_BASE_URL from '../config/api';
+import API_URL from '../config/api';
 
-const API = `${API_BASE_URL}/api/products`;
+const PRODUCTS_API = `${API_URL}/api/products`;
 
-// Async thunk: fetch all products (with optional filters)
 export const fetchProducts = createAsyncThunk(
   'products/fetchProducts',
   async (params = {}, { rejectWithValue }) => {
     try {
-      // Build query string from params
-      const query = new URLSearchParams();
-
-      if (params.page) query.append('page', params.page);
-      if (params.limit) query.append('limit', params.limit);
-      if (params.category) query.append('category', params.category);
-      if (params.search) query.append('search', params.search);
-
-      const response = await axios.get(`${API}?${query.toString()}`);
+      const query = new URLSearchParams(params).toString();
+      const response = await axios.get(`${PRODUCTS_API}?${query}`);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message);
@@ -26,12 +18,11 @@ export const fetchProducts = createAsyncThunk(
   }
 );
 
-// Async thunk: fetch one product by ID
 export const fetchProductById = createAsyncThunk(
   'products/fetchProductById',
   async (id, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${API}/${id}`);
+      const response = await axios.get(`${PRODUCTS_API}/${id}`);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message);
@@ -39,17 +30,17 @@ export const fetchProductById = createAsyncThunk(
   }
 );
 
+const initialState = {
+  products: [],
+  selectedProduct: null,
+  isLoading: false,
+  isLoadingProduct: false,
+  error: null
+};
+
 const productsSlice = createSlice({
   name: 'products',
-  initialState: {
-    products: [],
-    selectedProduct: null,
-    isLoading: false,
-    isLoadingProduct: false,
-    error: null,
-    totalPages: 0,
-    currentPage: 1
-  },
+  initialState,
   reducers: {
     clearSelectedProduct: (state) => {
       state.selectedProduct = null;
@@ -59,24 +50,19 @@ const productsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // List fetch
-      .addCase(fetchProducts.pending, (state) => {
+      .addCase(fetchProducts.pending, state => {
         state.isLoading = true;
         state.error = null;
       })
       .addCase(fetchProducts.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.products = action.payload.products || action.payload;
-        state.totalPages = action.payload.totalPages || 0;
-        state.currentPage = action.payload.currentPage || 1;
+        state.products = action.payload;
       })
       .addCase(fetchProducts.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       })
-
-      // Single product fetch
-      .addCase(fetchProductById.pending, (state) => {
+      .addCase(fetchProductById.pending, state => {
         state.isLoadingProduct = true;
         state.error = null;
       })
@@ -91,6 +77,5 @@ const productsSlice = createSlice({
   }
 });
 
-// Export actions and reducer
 export const { clearSelectedProduct } = productsSlice.actions;
 export default productsSlice.reducer;
