@@ -20,7 +20,7 @@ if (process.env.NODE_ENV === 'production' && process.env.CLIENT_URL) {
 }
 
 app.use(cors({
-  origin: allowedOrigins,
+  origin: ['https://ecommerce-mern-stack-frontend-vuu8.onrender.com/', 'http://localhost:3000'],
   credentials: true,
   methods: ['GET','POST','PUT','DELETE','OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token']
