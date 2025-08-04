@@ -116,4 +116,13 @@ process.on('SIGTERM', () => {
   });
 });
 
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Welcome to the MERN E-commerce backend API',
+    timestamp: new Date().toISOString()
+  });
+});
+
+
 module.exports = app;
